@@ -11,7 +11,7 @@ La revisión pública de partida fue `7d9b6b2`. La rama main publicaba la raíz 
 - El aprendizaje, los archivos y los informes se almacenan en el navegador. Las herramientas externas se abrirán bajo demanda.
 - La edición del tablero, los cálculos y la evaluación se comprobarán con circuitos válidos e inválidos, entradas de frontera y sesiones de navegador.
 
-La matriz final de requisitos y los resultados de verificación se actualizan después de las pruebas.
+La matriz siguiente vincula cada bloque del encargo con sus verificaciones.
 
 ## Inventario implementado
 
@@ -47,3 +47,5 @@ La matriz final de requisitos y los resultados de verificación se actualizan de
 - 45 pruebas de modelos, datos y persistencia aprobadas con Node. Incluyen 13 secuencias de tablero, cables abiertos y fases duplicadas, fallo de enclavamiento, caída de tensión de bobina, calentamiento, temporización, velocidad, escala 4–20 mA, matrices, planificación a 30 minutos y ciclo integrado del estanque.
 - El verificador en línea ejecutó las seis actividades en GeoGebra público. Las lecturas numéricas fueron 3, 7, −1, 3, 19 y 1. CAS devolvió {{x = 3, y = 2}} para el sistema de dos ecuaciones.
 - Se verificaron 33 URL externas de la academia; las 33 devolvieron HTTP 200. Los resultados de una consulta de disponibilidad no sustituyen las condiciones de licencia indicadas por cada editor.
+
+- 12 recorridos de navegador aprobados localmente. Se comprobaron las 47 guías, el guardado y la importación de adjuntos, el PDF real con imagen incrustada, el editor SVG, la recuperación offline y el registro de una observación de la estación en el informe. Axe-core ejecutó reglas WCAG A/AA en diez vistas móviles y el panel claro.

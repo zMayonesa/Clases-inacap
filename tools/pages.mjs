@@ -11,6 +11,7 @@ const rootOutputs = [
   'icon-192.png',
   'icon-512.png',
   'sw.js',
+  'terceros.txt',
 ]
 const check = process.argv.includes('--check'),
   changed = []
