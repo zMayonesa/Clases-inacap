@@ -112,8 +112,11 @@ export function CadEditor() {
   const selectedShape = sheet.items.find((s) => s.id === selected)
   function save(s: Sheet) {
     U((h) => [...h.slice(-24), sheet])
-    void put(s)
-    M('Plano guardado.')
+    M('Guardando el plano…')
+    void put(s).then(
+      () => M('Plano guardado.'),
+      () => M('No se pudo guardar el plano en este dispositivo.'),
+    )
   }
   function add(ax = x, ay = y, bx = x2, by = y2) {
     if (!shown.includes(layer)) V([...shown, layer])

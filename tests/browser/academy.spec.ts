@@ -183,6 +183,32 @@ test('Tarea de dibujo, guardado, exportación SVG y PDF', async ({ page }) => {
   await expect(page.locator('.cad-paper')).toBeVisible()
   expect((await page.pdf()).length).toBeGreaterThan(1000)
 })
+test('Una recarga conserva la última anotación aunque IndexedDB siga ocupado', async ({ page }) => {
+  await go(page, 'trabajo/lazo')
+  // Una segunda conexión retiene la transacción hasta que se descarga la página.
+  await page.evaluate(() => new Promise<void>((resolve, reject) => {
+    const connection = indexedDB.open('academia-ar-v2')
+    connection.onerror = () => reject(connection.error)
+    connection.onsuccess = () => {
+      const store = connection.result.transaction('records', 'readwrite').objectStore('records')
+      const deadline = Date.now() + 15000
+      function hold() {
+        const request = store.get('migrated')
+        request.onsuccess = () => {
+          resolve()
+          if (Date.now() < deadline) hold()
+        }
+      }
+      hold()
+    }
+  }))
+  const results = page.getByLabel('Resultados y unidades')
+  await results.fill('Lectura final de 18 mA')
+  await page.reload()
+  await expect(results).toHaveValue('Lectura final de 18 mA')
+  await page.reload()
+  await expect(results).toHaveValue('Lectura final de 18 mA')
+})
 test('Controles de cálculo, matrices, registro y hoja de costos', async ({ page }) => {
   await go(page, 'lab/geo-2')
   await expect(page.locator('.readings')).toContainText('(2; 7)')

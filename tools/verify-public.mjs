@@ -28,15 +28,16 @@ async function verify() {
 await Promise.all(Array.from({ length: 4 }, verify))
 console.log('URL pública y ' + paths.length + ' archivos del build comprobados byte a byte.')
 const proxy = process.env.HTTPS_PROXY || process.env.https_proxy
+const testProxyTLS = process.env.ACADEMIA_PROXY_TLS === '1'
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || undefined,
-  args: ['--no-sandbox', '--disable-dev-shm-usage'],
+  args: ['--no-sandbox', '--disable-dev-shm-usage', ...(testProxyTLS ? ['--ignore-certificate-errors'] : [])],
   ...(proxy ? { proxy: { server: new URL(proxy).origin } } : {}),
 })
 try {
   const ctx = await browser.newContext({
     ...devices['Pixel 7'],
-    ignoreHTTPSErrors: process.env.ACADEMIA_PROXY_TLS === '1',
+    ignoreHTTPSErrors: testProxyTLS,
   })
   const page = await ctx.newPage()
   await page.goto(url)
@@ -54,7 +55,7 @@ try {
   console.log('GeoGebra Classic cargó y comprobó el determinante desde la academia pública.')
   await page.goto(url + '#/clase/instrumentacion/2')
   await page.getByRole('heading', { name: 'Lazos de 4–20 mA y señales de 0–10 V' }).waitFor()
-  await page.evaluate(() => navigator.serviceWorker.ready)
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller, undefined, { timeout: 60000 })
   await ctx.setOffline(true)
   await page.reload()
   await page.getByRole('heading', { name: 'Lazos de 4–20 mA y señales de 0–10 V' }).waitFor()

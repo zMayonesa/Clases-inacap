@@ -18,8 +18,51 @@ let db: IDBPDatabase<AcademyDB>,
   pending: Promise<unknown> = Promise.resolve()
 const subscribers = new Set<() => void>()
 let channel: BroadcastChannel | undefined
-type PendingEdit = { apply: (value: unknown) => unknown }
+type PendingEdit = { before: unknown; apply: (value: unknown) => unknown }
 const edits = new Map<string, PendingEdit[]>()
+const recoveryKey = 'academia-ar-pending-v1'
+let session: Storage | undefined
+function checkpoint() {
+  if (!session) return
+  try {
+    if (!edits.size) return session.removeItem(recoveryKey)
+    const records = [...edits].map(([key, queue]) => ({
+      key,
+      before: queue.map((edit) => edit.before ?? null),
+      value: snapshot[key],
+    }))
+    session.setItem(recoveryKey, JSON.stringify(records))
+  } catch {
+    // IndexedDB sigue siendo el almacén principal si se alcanza la cuota de la pestaña.
+  }
+}
+async function recoverPending() {
+  if (typeof window === 'undefined') return
+  let records: { key: string; before: unknown[]; value: unknown }[]
+  try {
+    session = window.sessionStorage
+    const raw = session.getItem(recoveryKey)
+    records = raw ? JSON.parse(raw) : []
+  } catch {
+    return
+  }
+  if (Array.isArray(records) && records.length) {
+    const tx = db.transaction('records', 'readwrite')
+    for (const entry of records) {
+      if (!entry || typeof entry.key !== 'string' || !Array.isArray(entry.before)) continue
+      const current = JSON.stringify((await tx.store.get(entry.key)) ?? null)
+      // Otra pestaña puede haber confirmado una versión más reciente durante la recarga.
+      if (entry.before.some((value) => JSON.stringify(value) === current))
+        await tx.store.put(entry.value, entry.key)
+    }
+    await tx.done
+    session.removeItem(recoveryKey)
+  }
+  window.addEventListener('pagehide', checkpoint)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') checkpoint()
+  })
+}
 function rebase(key: string, value: unknown) {
   return (edits.get(key) || []).reduce((current, edit) => edit.apply(current), value)
 }
@@ -86,10 +129,12 @@ export async function boot(legacy?: Pick<Storage, 'getItem'>, broadcast = true) 
       void enqueue(reload)
     }
   }
+  await recoverPending()
   await reload()
 }
 export function change<T>(key: string, base: T, update: T | ((v: T) => T)) {
   const edit: PendingEdit = {
+    before: snapshot[key],
     apply: (prior) =>
       typeof update === 'function' ? (update as (v: T) => T)((prior as T) ?? base) : update,
   }
@@ -102,10 +147,10 @@ export function change<T>(key: string, base: T, update: T | ((v: T) => T)) {
     let saved: unknown
     try {
       const tx = db.transaction('records', 'readwrite')
-      const prior = await tx.store.get(key)
-      saved = edit.apply(prior)
-      await tx.store.put(saved, key)
-      await tx.done
+      saved = typeof update === 'function' ? edit.apply(await tx.store.get(key)) : update
+      const write = tx.store.put(saved, key)
+      tx.commit?.()
+      await Promise.all([write, tx.done])
       failure = ''
       channel?.postMessage(key)
     } catch (err) {

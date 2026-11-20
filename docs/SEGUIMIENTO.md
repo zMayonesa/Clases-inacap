@@ -31,8 +31,8 @@ La matriz siguiente vincula cada bloque del encargo con sus verificaciones.
 | 19. Ocho semanas | Fecha de inicio y 30–120 min/día, ruta esencial o completa, continuidad después de días perdidos, estudio fraccionado y repasos según error y recuerdo. La ruta esencial se comprueba a 30 min/día, con las 36 clases y el proyecto |
 | 20. Integrador | Seis etapas. El ensayo integrado acopla el nivel, contacto LIC-101, permiso KA1, contactor KM1, FR, velocidad del motor, caudal, LT 4–20 mA y registro de HMI. Permite guardar medidas directamente en el informe final |
 | 21–23. Plataforma, arquitectura y funcionamiento local | Panel, navegación móvil y escritorio, temas, fuentes locales, diagramas y controles. Módulos de contenido, motores, interfaz y persistencia. Caché versionada del build, migración de ar_done/ar_w, respaldos con anexos y restauración transaccional |
-| 24. Publicación | Pages ya estaba configurado para main en la raíz. La API de configuración devolvió HTTP 403 al solicitar modo workflow. Se conserva el publicador habilitado; el build estático en la raíz se compara byte a byte con dist en CI. Ningún otro repositorio interviene |
-| 25–30. QA, aceptación y entrega | npm ci, comprobación de tipos, build reproducible, ensayos de modelos, persistencia, integración y accesibilidad, comandos reales y enlaces externos. La publicación requiere comprobar la revisión desplegada y abrir el sitio público |
+| 24. Publicación | GitHub Pages sirve la raíz de main. La API de configuración devolvió HTTP 403 al solicitar el modo workflow. Se conservó el publicador ya habilitado. La integración continua compara los archivos de la raíz con dist y el verificador posterior al despliegue los compara con la URL pública |
+| 25–30. QA, aceptación y entrega | Instalación limpia, tipos, build reproducible, modelos, persistencia, integración y accesibilidad. Comprobación de comandos en GeoGebra y de enlaces externos. En la URL pública se ejercitaron el tablero, el applet y una clase sin conexión |
 
 ## Condiciones de verificación
 
@@ -46,6 +46,11 @@ La matriz siguiente vincula cada bloque del encargo con sus verificaciones.
 - Instalación limpia con npm ci, comprobación TypeScript y build de producción completados. El comando pages.mjs --check contrasta la salida rastreada por Git con los archivos recién compilados.
 - 45 pruebas de modelos, datos y persistencia aprobadas con Node. Incluyen 13 secuencias de tablero, cables abiertos y fases duplicadas, fallo de enclavamiento, caída de tensión de bobina, calentamiento, temporización, velocidad, escala 4–20 mA, matrices, planificación a 30 minutos y ciclo integrado del estanque.
 - El verificador en línea ejecutó las seis actividades en GeoGebra público. Las lecturas numéricas fueron 3, 7, −1, 3, 19 y 1. CAS devolvió {{x = 3, y = 2}} para el sistema de dos ecuaciones.
-- Se verificaron 33 URL externas de la academia; las 33 devolvieron HTTP 200. Los resultados de una consulta de disponibilidad no sustituyen las condiciones de licencia indicadas por cada editor.
+- Las 33 URL externas consultadas devolvieron HTTP 200. Las condiciones de licencia figuran en la ficha de cada editor.
+- 13 recorridos de navegador aprobados localmente. Se comprobaron las 47 guías, el guardado y la importación de adjuntos, el PDF con imagen incrustada, el editor SVG, la recuperación offline y el registro de una observación de la estación en el informe. Un ensayo retiene una transacción durante una recarga y comprueba que se conserva la última anotación. Axe-core ejecutó reglas WCAG A/AA en diez vistas móviles y el panel claro.
 
-- 12 recorridos de navegador aprobados localmente. Se comprobaron las 47 guías, el guardado y la importación de adjuntos, el PDF real con imagen incrustada, el editor SVG, la recuperación offline y el registro de una observación de la estación en el informe. Axe-core ejecutó reglas WCAG A/AA en diez vistas móviles y el panel claro.
+## Comprobación pública
+
+El 20 de noviembre se cotejaron los 19 archivos públicos con el build y se ejecutó el ensayo estrella–triángulo desde el sitio publicado. GeoGebra Classic calculó el determinante esperado de 1. Se reabrió la clase de lazos de 4–20 mA con la red desactivada después de completar la instalación de la caché. La revisión de integración continua identificó una pérdida del último cambio al recargar inmediatamente. Se ajustó la persistencia y se añadió el ensayo de regresión.
+
+[Sitio público](https://zmayonesa.github.io/Clases-inacap/) · [Historial de verificaciones y despliegues de main](https://github.com/zMayonesa/Clases-inacap/actions?query=branch%3Amain) · [Verificador público reproducible](../tools/verify-public.mjs)
