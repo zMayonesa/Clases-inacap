@@ -1,39 +1,523 @@
-import {practices} from '../board/practices'
-import {courses,extras} from './catalog'
-import {geoActivities} from './math'
-export type Lab={id:string;title:string;course:string;lesson:number;level:string;minutes:number;tool:string;bench:string;objective:string;steps:string[];challenge:string;expected:string;evidence:string[];android:string;criteria:string[]}
-const build=(id:string,title:string,course:string,lesson:number,minutes:number,tool:string,bench:string,objective:string,steps:string[],challenge:string,expected:string,evidence:string[],level='Inicial',android='Completo en Chrome Android'):Lab=>({id,title,course,lesson,minutes,tool,bench,objective,steps,challenge,expected,evidence,level,android,criteria:['Predicción justificada con las unidades o estados del ejercicio.','Procedimiento reproducible y evidencia de '+title.toLowerCase()+'.','Comparación con el resultado esperado y explicación de una diferencia o límite.']})
-const boardLessons=[1,1,2,2,3,3,4,4,1,2,1,5,5]
-const electrical=practices.map(([id,title,objective,construction,expected],i)=>build(id,title,'maquinas',boardLessons[i],i<4?20:30,'Tablero virtual','board',objective,[construction,'Consulta el esquema y la tabla de bornes de referencia. En «Construir» coloca los símbolos y reproduce las conexiones.','Ejecuta la maniobra indicada y registra los estados. Usa «Evaluar circuito» para contrastar la secuencia.'],id==='diagnostico'?'Reproduce otra fase ausente y documenta cómo la ubicaste.':'Abre una conexión que consideres indispensable. Predice qué parte de la maniobra se pierde y compruébalo.',expected,['Proyecto del tablero o su copia JSON','Tabla de bobinas, protecciones y motor antes y después de la orden'],i<3?'Inicial':'Intermedio'))
-const maths=geoActivities.map((g,i)=>{const l=courses[5].lessons[i];return build('geo-'+(i+1),['Puntos y coordenadas','Recta con deslizadores','Parábola y vértice','Sistemas e intersecciones','Producto de matrices','Determinante e inversa'][i],'matematicas',i,20,'GeoGebra '+(g.app==='classic'?'Classic':'Gráfica'),'geo',l.goal,l.guided,l.exercise.prompt,g.expected,['Captura de Álgebra y de la gráfica o de CAS','Cálculo manual comprobado'],i<2?'Inicial':'Intermedio','Explorador interno offline; GeoGebra en línea')})
-const cadLabs=extras.flatMap(c=>c.lessons.map((l,i)=>build((c.id==='autocad'?'cad':'cade')+'-'+(i+1),l.title,c.id,i,30,c.short,c.id==='autocad'?'cad':'board',l.goal,l.guided,l.review,l.example.join(' '),['Archivo editable en el formato de la herramienta','Captura del resultado y comprobación independiente'],i<2?'Inicial':'Intermedio',c.id==='autocad'?'Alternativa Android en editor SVG; práctica DWG completa en escritorio':'Alternativa Android en tablero interno; CADe SIMU en Windows')))
-export const labs:Lab[]=[...electrical,...maths,...cadLabs,
- build('ohm','Banco de ley de Ohm','electronica',0,15,'Banco de continua · Falstad','ohm','Medir la relación V/I en tres resistencias.',['Predice I con 12 V y 600 Ω.','En el banco introduce los valores y registra I y P.','Repite con 300 Ω y 1200 Ω.'],'Predice la resistencia para obtener 30 mA a 12 V.','20, 40 y 10 mA; para 30 mA se requieren 400 Ω.',['Tabla con V, R, I y P']),
- build('divisor','Divisor con dos resistencias','electronica',1,20,'Banco de continua · Tinkercad','divider','Verificar las leyes de nodos y mallas.',['Usa 12 V, 100 Ω y 200 Ω.','Compara ambas caídas en serie y después ambas corrientes en paralelo.'],'Invierte los resistores en serie y predice V₂.','En serie 4 y 8 V; invertidos V₂ = 4 V. En paralelo 120 y 60 mA.',['Tabla de ramas, cálculo y esquema']),
- build('rc','Respuesta temporal RC','electronica',2,20,'Banco RC · Falstad','rc','Relacionar R y C con el tiempo de carga.',['Fija 5 V, 10 kΩ y 100 µF.','Calcula τ y explora la curva a 0, 1 y 5 s.'],'Duplica la capacitancia y predice el nuevo punto al 63,2 %.','τ pasa de 1 a 2 s. En ambos casos vC(τ) ≈ 3,16 V.',['Tabla de tiempos y gráfica']),
- build('transistor','Conmutación de una carga','electronica',3,20,'Tinkercad o banco de transistor','transistor','Calcular la corriente de base y observar saturación según el modelo.',['Configura entrada 5 V, Rbase 1000 Ω, carga 100 Ω y fuente 12 V.','Compara corriente de base y corriente demandada. Cambia la entrada a cero.'],'Aumenta Rbase hasta que la corriente calculada sea insuficiente para saturar.','IB=4,3 mA; el modelo limita IC al menor de βIB y (12−0,2)/100.',['Esquema NPN y medidas de dos estados']),
- build('pwm','Pulsos y potencia media','electronica',4,20,'Banco PWM · Wokwi','pwm','Distinguir promedio y eficaz.',['Ajusta 12 V, 100 Hz y 25 %.','Predice y observa tiempo alto, promedio y eficaz.'],'Contrasta 50 % y 75 % y explica el calentamiento.','A 25 %, ton = 2,5 ms, Vmedio = 3 V y Vef = 6 V.',['Gráfica y cálculos con unidades']),
- build('lazo','Transmisor de 4–20 mA','instrumentacion',1,15,'Banco de instrumentación','loop','Transformar corriente en presión con cero vivo.',['Fija 0 y 10 bar.','Recorre 4, 8, 12, 16 y 20 mA. Compara tu tabla con la lectura.'],'Cambia el intervalo a 2–6 bar y predice el valor a 16 mA.','A 12 mA en 0–10 bar: 5 bar. A 16 mA en 2–6 bar: 5 bar.',['Cinco puntos de escala']),
- build('calibracion','Calibración multipunto','instrumentacion',2,25,'Banco de calibración','cal','Diferenciar sesgo y pendiente.',['En 0–100 usa ganancia 1 y sesgo +1.','Lee 0, 25, 50, 75 y 100; repite con ganancia 1,02.'],'Clasifica puntos contra ±1 % del intervalo.','Con ganancia 1,02 y sesgo +1, a 100 se leen 103 y el error es +3.',['Tabla de patrón, lectura y error']),
- build('nivel','Control de nivel con histéresis','instrumentacion',4,25,'Tanque dinámico','tank','Interpretar memoria y balance de volumen.',['Fija entrada 5 L/s y salida 2 L/s.','Avanza el tiempo y registra dos cambios de estado por límite.'],'Eleva la salida por encima de la entrada. Explica si el nivel puede recuperarse.','Cuando llena y no hay saturación, la variación es +3 L por segundo.',['Nivel, tiempo, orden y caudales']),
- build('presion','Medición de presión hidrostática','instrumentacion',3,15,'Columna de líquido','pressure','Estimar presión de fondo con densidad declarada.',['Antes de simular estima la presión para 2 m de agua.','Duplica la altura y después cambia la densidad a 800 kg/m³.'],'Encuentra la altura que produce 0,2943 bar con agua.','2 m de agua dan 0,1962 bar; 3 m dan 0,2943 bar.',['Tabla altura–presión y densidad']),
- build('sensor','Diagnóstico de un sensor','instrumentacion',5,20,'Banco de instrumentación','loop','Separar fuera de rango, sesgo y escala.',['Compara 0 mA con 4 mA y observa la calidad.','Cambia el intervalo manteniendo fija la corriente y anota la indicación.'],'Propón dos causas para 0 mA y una comprobación que las distinga.','0 mA está fuera del intervalo normal. 4 mA representa el mínimo configurado.',['Lectura bruta, calidad e hipótesis']),
- build('pid','Lectura de un P&ID','instrumentacion',4,20,'Tanque dinámico y esquema P&ID','tank','Seguir la señal LT–LIC hasta la bomba.',['Identifica en el diagrama los tres equipos del lazo.','Recorre una subida y una bajada del nivel. Relaciona señal con flujo material.'],'Dibuja el P&ID de una bomba de salida y explica el cambio en el sentido del control.','En el modelo, la bomba de entrada se activa en el límite bajo y para en el alto.',['P&ID anotado y tabla de dos transiciones']),
- build('subred','Direccionamiento de una celda','redes',1,20,'Banco PLC–HMI','network','Decidir si dos estaciones son hosts de la misma subred.',['Usa PLC 192.168.1.75 y HMI 192.168.1.105 con /26.','Cambia la HMI a .130 y luego a .127.'],'Propón dos hosts válidos del bloque 128–191.','Primera configuración comunica; .130 pertenece a otra red y .127 es difusión.',['Configuración y diagnóstico por caso']),
- build('topologia','Topología Ethernet en estrella','redes',2,25,'Packet Tracer o banco PLC–HMI','network','Aislar la falla de un enlace en una topología local.',['Conecta ambas estaciones al switch y configura hosts diferentes en /24.','Interrumpe el enlace de la HMI y luego el del PLC. Registra cuál queda aislada.'],'Dibuja la alternativa con un router entre dos subredes.','Cada enlace abierto impide el intercambio; dos subredes diferentes requieren encaminamiento.',['Topología y evidencia en .pkt o captura del banco']),
- build('modbus','Lectura PLC–HMI de un registro','redes',3,20,'Modelo local de registros','network','Interpretar dirección de protocolo y escala.',['Activa ambos enlaces dentro de la misma subred.','Usa dirección 0 y crudo 357. Selecciona después una dirección sin asignar.'],'Distingue en un informe ausencia de red, excepción y lectura válida.','La dirección 0 devuelve 35,7 L; una dirección sin mapa devuelve excepción 02.',['Configuración, registro, unidad y valor']),
- build('presupuesto','Hoja de presupuesto del tablero','administracion',2,25,'Hoja de costos CSV','budget','Calcular base, reserva y monto total en CLP.',['Carga dos contactores a $18 000 y tres horas a $8000.','Aplica 10 % de reserva y exporta la tabla.'],'Aumenta el precio de cada contactor $1000 y cuantifica el efecto final.','Base $60 000; total $66 000. El incremento con reserva es $2200.',['CSV y justificación de precios supuestos']),
- build('indicadores','Seguimiento de productividad','administracion',3,15,'Calculadora de indicadores','kpi','Calcular piezas buenas por hora-persona.',['Introduce 100 unidades, 8 rechazos y 4 h.','Compara la tasa con el objetivo de 20 unidades buenas/h.'],'Cambia solo los rechazos y localiza el punto que iguala el objetivo.','Se obtienen 23 piezas buenas/h. Con 20 rechazos se iguala el objetivo.',['Tabla comparativa y decisión']),
- build('cronograma','Plazos y decisión de recursos','administracion',4,20,'Simulador de cronograma','schedule','Comparar rutas paralelas con restricciones de capacidad.',['Fija preparación 1 h, CAD 3 h, simulación 5 h y cierre 2 h.','Alterna uno y dos puestos independientes.'],'¿Cuánto margen tiene el plano CAD con dos puestos?','Con dos puestos el plazo es 8 h y CAD tiene 2 h de holgura. Con uno son 11 h.',['Dos cronogramas y sus supuestos'])
+import { practices } from '../board/practices'
+import { courses, extras } from './catalog'
+import { geoActivities } from './math'
+export type Lab = {
+  id: string
+  title: string
+  course: string
+  lesson: number
+  level: string
+  minutes: number
+  tool: string
+  bench: string
+  objective: string
+  steps: string[]
+  challenge: string
+  expected: string
+  evidence: string[]
+  android: string
+  criteria: string[]
+}
+const build = (
+  id: string,
+  title: string,
+  course: string,
+  lesson: number,
+  minutes: number,
+  tool: string,
+  bench: string,
+  objective: string,
+  steps: string[],
+  challenge: string,
+  expected: string,
+  evidence: string[],
+  level = 'Inicial',
+  android = 'Completo en Chrome Android',
+): Lab => ({
+  id,
+  title,
+  course,
+  lesson,
+  minutes,
+  tool,
+  bench,
+  objective,
+  steps,
+  challenge,
+  expected,
+  evidence,
+  level,
+  android,
+  criteria: [
+    'Predicción justificada con las unidades o estados del ejercicio.',
+    'Procedimiento reproducible y evidencia de ' + title.toLowerCase() + '.',
+    'Comparación con el resultado esperado y explicación de una diferencia o límite.',
+  ],
+})
+const boardLessons = [1, 1, 2, 2, 3, 3, 4, 4, 1, 2, 1, 5, 5]
+const electrical = practices.map(([id, title, objective, construction, expected], i) =>
+  build(
+    id,
+    title,
+    'maquinas',
+    boardLessons[i],
+    i < 4 ? 20 : 30,
+    'Tablero virtual',
+    'board',
+    objective,
+    [
+      construction,
+      'Consulta el esquema y la tabla de bornes de referencia. En «Construir» coloca los símbolos y reproduce las conexiones.',
+      'Ejecuta la maniobra indicada y registra los estados. Usa «Evaluar circuito» para contrastar la secuencia.',
+    ],
+    id === 'diagnostico'
+      ? 'Reproduce otra fase ausente y documenta cómo la ubicaste.'
+      : 'Abre una conexión que consideres indispensable. Predice qué parte de la maniobra se pierde y compruébalo.',
+    expected,
+    [
+      'Proyecto del tablero o su copia JSON',
+      'Tabla de bobinas, protecciones y motor antes y después de la orden',
+    ],
+    i < 3 ? 'Inicial' : 'Intermedio',
+  ),
+)
+const maths = geoActivities.map((g, i) => {
+  const l = courses[5].lessons[i]
+  return build(
+    'geo-' + (i + 1),
+    [
+      'Puntos y coordenadas',
+      'Recta con deslizadores',
+      'Parábola y vértice',
+      'Sistemas e intersecciones',
+      'Producto de matrices',
+      'Determinante e inversa',
+    ][i],
+    'matematicas',
+    i,
+    20,
+    'GeoGebra ' + (g.app === 'classic' ? 'Classic' : 'Gráfica'),
+    'geo',
+    l.goal,
+    l.guided,
+    l.exercise.prompt,
+    g.expected,
+    ['Captura de Álgebra y de la gráfica o de CAS', 'Cálculo manual comprobado'],
+    i < 2 ? 'Inicial' : 'Intermedio',
+    'Explorador interno offline; GeoGebra en línea',
+  )
+})
+const cadLabs = extras.flatMap((c) =>
+  c.lessons.map((l, i) =>
+    build(
+      (c.id === 'autocad' ? 'cad' : 'cade') + '-' + (i + 1),
+      l.title,
+      c.id,
+      i,
+      30,
+      c.short,
+      c.id === 'autocad' ? 'cad' : 'board',
+      l.goal,
+      l.guided,
+      l.review,
+      l.example.join(' '),
+      [
+        'Archivo editable en el formato de la herramienta',
+        'Captura del resultado y comprobación independiente',
+      ],
+      i < 2 ? 'Inicial' : 'Intermedio',
+      c.id === 'autocad'
+        ? 'Alternativa Android en editor SVG; práctica DWG completa en escritorio'
+        : 'Alternativa Android en tablero interno; CADe SIMU en Windows',
+    ),
+  ),
+)
+export const labs: Lab[] = [
+  ...electrical,
+  ...maths,
+  ...cadLabs,
+  build(
+    'ohm',
+    'Banco de ley de Ohm',
+    'electronica',
+    0,
+    15,
+    'Banco de continua · Falstad',
+    'ohm',
+    'Medir la relación V/I en tres resistencias.',
+    [
+      'Predice I con 12 V y 600 Ω.',
+      'En el banco introduce los valores y registra I y P.',
+      'Repite con 300 Ω y 1200 Ω.',
+    ],
+    'Predice la resistencia para obtener 30 mA a 12 V.',
+    '20, 40 y 10 mA; para 30 mA se requieren 400 Ω.',
+    ['Tabla con V, R, I y P'],
+  ),
+  build(
+    'divisor',
+    'Divisor con dos resistencias',
+    'electronica',
+    1,
+    20,
+    'Banco de continua · Tinkercad',
+    'divider',
+    'Verificar las leyes de nodos y mallas.',
+    [
+      'Usa 12 V, 100 Ω y 200 Ω.',
+      'Compara ambas caídas en serie y después ambas corrientes en paralelo.',
+    ],
+    'Invierte los resistores en serie y predice V₂.',
+    'En serie 4 y 8 V; invertidos V₂ = 4 V. En paralelo 120 y 60 mA.',
+    ['Tabla de ramas, cálculo y esquema'],
+  ),
+  build(
+    'rc',
+    'Respuesta temporal RC',
+    'electronica',
+    2,
+    20,
+    'Banco RC · Falstad',
+    'rc',
+    'Relacionar R y C con el tiempo de carga.',
+    ['Fija 5 V, 10 kΩ y 100 µF.', 'Calcula τ y explora la curva a 0, 1 y 5 s.'],
+    'Duplica la capacitancia y predice el nuevo punto al 63,2 %.',
+    'τ pasa de 1 a 2 s. En ambos casos vC(τ) ≈ 3,16 V.',
+    ['Tabla de tiempos y gráfica'],
+  ),
+  build(
+    'transistor',
+    'Conmutación de una carga',
+    'electronica',
+    3,
+    20,
+    'Tinkercad o banco de transistor',
+    'transistor',
+    'Calcular la corriente de base y observar saturación según el modelo.',
+    [
+      'Configura entrada 5 V, Rbase 1000 Ω, carga 100 Ω y fuente 12 V.',
+      'Compara corriente de base y corriente demandada. Cambia la entrada a cero.',
+    ],
+    'Aumenta Rbase hasta que la corriente calculada sea insuficiente para saturar.',
+    'IB=4,3 mA; el modelo limita IC al menor de βIB y (12−0,2)/100.',
+    ['Esquema NPN y medidas de dos estados'],
+  ),
+  build(
+    'pwm',
+    'Pulsos y potencia media',
+    'electronica',
+    4,
+    20,
+    'Banco PWM · Wokwi',
+    'pwm',
+    'Distinguir promedio y eficaz.',
+    ['Ajusta 12 V, 100 Hz y 25 %.', 'Predice y observa tiempo alto, promedio y eficaz.'],
+    'Contrasta 50 % y 75 % y explica el calentamiento.',
+    'A 25 %, ton = 2,5 ms, Vmedio = 3 V y Vef = 6 V.',
+    ['Gráfica y cálculos con unidades'],
+  ),
+  build(
+    'lazo',
+    'Transmisor de 4–20 mA',
+    'instrumentacion',
+    1,
+    15,
+    'Banco de instrumentación',
+    'loop',
+    'Transformar corriente en presión con cero vivo.',
+    ['Fija 0 y 10 bar.', 'Recorre 4, 8, 12, 16 y 20 mA. Compara tu tabla con la lectura.'],
+    'Cambia el intervalo a 2–6 bar y predice el valor a 16 mA.',
+    'A 12 mA en 0–10 bar: 5 bar. A 16 mA en 2–6 bar: 5 bar.',
+    ['Cinco puntos de escala'],
+  ),
+  build(
+    'calibracion',
+    'Calibración multipunto',
+    'instrumentacion',
+    2,
+    25,
+    'Banco de calibración',
+    'cal',
+    'Diferenciar sesgo y pendiente.',
+    ['En 0–100 usa ganancia 1 y sesgo +1.', 'Lee 0, 25, 50, 75 y 100; repite con ganancia 1,02.'],
+    'Clasifica puntos contra ±1 % del intervalo.',
+    'Con ganancia 1,02 y sesgo +1, a 100 se leen 103 y el error es +3.',
+    ['Tabla de patrón, lectura y error'],
+  ),
+  build(
+    'nivel',
+    'Control de nivel con histéresis',
+    'instrumentacion',
+    4,
+    25,
+    'Tanque dinámico',
+    'tank',
+    'Interpretar memoria y balance de volumen.',
+    [
+      'Fija entrada 5 L/s y salida 2 L/s.',
+      'Avanza el tiempo y registra dos cambios de estado por límite.',
+    ],
+    'Eleva la salida por encima de la entrada. Explica si el nivel puede recuperarse.',
+    'Cuando llena y no hay saturación, la variación es +3 L por segundo.',
+    ['Nivel, tiempo, orden y caudales'],
+  ),
+  build(
+    'presion',
+    'Medición de presión hidrostática',
+    'instrumentacion',
+    3,
+    15,
+    'Columna de líquido',
+    'pressure',
+    'Estimar presión de fondo con densidad declarada.',
+    [
+      'Antes de simular estima la presión para 2 m de agua.',
+      'Duplica la altura y después cambia la densidad a 800 kg/m³.',
+    ],
+    'Encuentra la altura que produce 0,2943 bar con agua.',
+    '2 m de agua dan 0,1962 bar; 3 m dan 0,2943 bar.',
+    ['Tabla altura–presión y densidad'],
+  ),
+  build(
+    'sensor',
+    'Diagnóstico de un sensor',
+    'instrumentacion',
+    5,
+    20,
+    'Banco de instrumentación',
+    'loop',
+    'Separar fuera de rango, sesgo y escala.',
+    [
+      'Compara 0 mA con 4 mA y observa la calidad.',
+      'Cambia el intervalo manteniendo fija la corriente y anota la indicación.',
+    ],
+    'Propón dos causas para 0 mA y una comprobación que las distinga.',
+    '0 mA está fuera del intervalo normal. 4 mA representa el mínimo configurado.',
+    ['Lectura bruta, calidad e hipótesis'],
+  ),
+  build(
+    'pid',
+    'Lectura de un P&ID',
+    'instrumentacion',
+    4,
+    20,
+    'Tanque dinámico y esquema P&ID',
+    'tank',
+    'Seguir la señal LT–LIC hasta la bomba.',
+    [
+      'Identifica en el diagrama los tres equipos del lazo.',
+      'Recorre una subida y una bajada del nivel. Relaciona señal con flujo material.',
+    ],
+    'Dibuja el P&ID de una bomba de salida y explica el cambio en el sentido del control.',
+    'En el modelo, la bomba de entrada se activa en el límite bajo y para en el alto.',
+    ['P&ID anotado y tabla de dos transiciones'],
+  ),
+  build(
+    'subred',
+    'Direccionamiento de una celda',
+    'redes',
+    1,
+    20,
+    'Banco PLC–HMI',
+    'network',
+    'Decidir si dos estaciones son hosts de la misma subred.',
+    ['Usa PLC 192.168.1.75 y HMI 192.168.1.105 con /26.', 'Cambia la HMI a .130 y luego a .127.'],
+    'Propón dos hosts válidos del bloque 128–191.',
+    'Primera configuración comunica; .130 pertenece a otra red y .127 es difusión.',
+    ['Configuración y diagnóstico por caso'],
+  ),
+  build(
+    'topologia',
+    'Topología Ethernet en estrella',
+    'redes',
+    2,
+    25,
+    'Packet Tracer o banco PLC–HMI',
+    'network',
+    'Aislar la falla de un enlace en una topología local.',
+    [
+      'Conecta ambas estaciones al switch y configura hosts diferentes en /24.',
+      'Interrumpe el enlace de la HMI y luego el del PLC. Registra cuál queda aislada.',
+    ],
+    'Dibuja la alternativa con un router entre dos subredes.',
+    'Cada enlace abierto impide el intercambio; dos subredes diferentes requieren encaminamiento.',
+    ['Topología y evidencia en .pkt o captura del banco'],
+  ),
+  build(
+    'modbus',
+    'Lectura PLC–HMI de un registro',
+    'redes',
+    3,
+    20,
+    'Modelo local de registros',
+    'network',
+    'Interpretar dirección de protocolo y escala.',
+    [
+      'Activa ambos enlaces dentro de la misma subred.',
+      'Usa dirección 0 y crudo 357. Selecciona después una dirección sin asignar.',
+    ],
+    'Distingue en un informe ausencia de red, excepción y lectura válida.',
+    'La dirección 0 devuelve 35,7 L; una dirección sin mapa devuelve excepción 02.',
+    ['Configuración, registro, unidad y valor'],
+  ),
+  build(
+    'rtu',
+    'Tramas y parámetros Modbus RTU',
+    'redes',
+    3,
+    20,
+    'Banco serie RS-485 local',
+    'rtu',
+    'Leer una trama RTU y distinguir errores de configuración.',
+    [
+      'Configura ambos extremos en 9600 bit/s, 8E1 y unidad 1. Identifica función, dirección, cantidad y CRC en la solicitud.',
+      'Cambia solo la paridad y después solo la unidad consultada. Compara con la respuesta que contenía el valor 357.',
+    ],
+    'Configura unidad 7 a 19 200 bit/s y lee el valor 512. Identifica los dos bytes de datos.',
+    'Para 512 los datos son 02 00 en hexadecimal. El intercambio requiere parámetros comunes e ID coincidente.',
+    ['Solicitud, respuesta y una configuración con fallo'],
+  ),
+  build(
+    'ciclo',
+    'Cronograma de E/S y supervisión',
+    'redes',
+    4,
+    20,
+    'Cronograma de muestreo local',
+    'cycle',
+    'Predecir qué pulsos de una entrada observa el controlador y cuáles la HMI.',
+    [
+      'Configura E/S a 4 ms y HMI a 20 ms. Aplica un pulso desde 6 ms que dure 7 ms.',
+      'Compara señal física, imagen de E/S y lectura HMI en 0–100 ms.',
+    ],
+    'Amplía el pulso hasta que lo capture la HMI a 20 ms. Justifica la condición límite.',
+    'El PLC registra el pulso a 8 y 12 ms. Con la duración original la HMI no lo lee.',
+    ['Cronograma original, modificado y explicación del muestreo'],
+  ),
+  build(
+    'decision',
+    'Decisión multicriterio de herramientas',
+    'administracion',
+    5,
+    15,
+    'Hoja de decisión local',
+    'decision',
+    'Comparar dos alternativas con pesos que suman uno.',
+    [
+      'Califica A con costo 5 y cobertura 3. Para B usa 3 y 5.',
+      'Fija el peso de costo en 40 % y compara los resultados. Luego muévelo al 60 %.',
+    ],
+    'Localiza el peso que produce empate y explica qué condición indispensable excluiría una alternativa.',
+    'A y B empatan a 50 %. A 40 % de costo gana B con 4,2 puntos.',
+    ['Matriz, pesos, decisión y condición que la cambiaría'],
+  ),
+  build(
+    'presupuesto',
+    'Hoja de presupuesto del tablero',
+    'administracion',
+    2,
+    25,
+    'Hoja de costos CSV',
+    'budget',
+    'Calcular base, reserva y monto total en CLP.',
+    [
+      'Carga dos contactores a $18 000 y tres horas a $8000.',
+      'Aplica 10 % de reserva y exporta la tabla.',
+    ],
+    'Aumenta el precio de cada contactor $1000 y cuantifica el efecto final.',
+    'Base $60 000; total $66 000. El incremento con reserva es $2200.',
+    ['CSV y justificación de precios supuestos'],
+  ),
+  build(
+    'indicadores',
+    'Seguimiento de productividad',
+    'administracion',
+    3,
+    15,
+    'Calculadora de indicadores',
+    'kpi',
+    'Calcular piezas buenas por hora-persona.',
+    [
+      'Introduce 100 unidades, 8 rechazos y 4 h.',
+      'Compara la tasa con el objetivo de 20 unidades buenas/h.',
+    ],
+    'Cambia solo los rechazos y localiza el punto que iguala el objetivo.',
+    'Se obtienen 23 piezas buenas/h. Con 20 rechazos se iguala el objetivo.',
+    ['Tabla comparativa y decisión'],
+  ),
+  build(
+    'cronograma',
+    'Plazos y decisión de recursos',
+    'administracion',
+    4,
+    20,
+    'Simulador de cronograma',
+    'schedule',
+    'Comparar rutas paralelas con restricciones de capacidad.',
+    [
+      'Fija preparación 1 h, CAD 3 h, simulación 5 h y cierre 2 h.',
+      'Alterna uno y dos puestos independientes.',
+    ],
+    '¿Cuánto margen tiene el plano CAD con dos puestos?',
+    'Con dos puestos el plazo es 8 h y CAD tiene 2 h de holgura. Con uno son 11 h.',
+    ['Dos cronogramas y sus supuestos'],
+  ),
 ]
-export const findLab=(id:string)=>labs.find(l=>l.id===id)
-export function recommendedLab(course:string,i:number){return labs.find(l=>l.course===course&&l.lesson===i)||labs.find(l=>l.course===course)}
-export const projectStages=[
- ['Alcance y aceptación','Define un estanque de 100 L y una bomba de llenado. Escribe condiciones observables para marcha, paro, disparo, nivel bajo y alto.','cronograma','Cronograma, supuestos y tres criterios observables.'],
- ['Circuitos y protección','Construye mando con retención, paro común, emergencia y FR. Alimenta el motor desde las tres fases. Ensaya pérdida de fase y sobrecarga.','termico','Proyecto editable, esquema y tabla de estados de KM, FR y M.'],
- ['Instrumentación y cálculo','Escala 4–20 mA a 0–100 L. Predice el tiempo de 30 a 70 L con 5 L/s de entrada y 2 L/s de salida. Contrasta con el tanque.','nivel','Tabla de cinco puntos, cálculo 40/3 s y observación del paso discreto.'],
- ['Comunicación y supervisión','Configura PLC y HMI en una /26. Define registro 0 en décimas de litro y documenta el valor de 357 cuentas. Ensaya una lectura sin enlace.','modbus','Plano de red, tabla de registros y criterios de calidad.'],
- ['Documentación y presupuesto','Dibuja mando, fuerza y disposición del tablero. Registra materiales, horas y reserva en CLP, con precios supuestos.','cad-4','Diagrama exportado, hoja CSV y presupuesto total.'],
- ['Validación e informe final','Cruza las evidencias de cada banco: orden de nivel → marcha prevista, estado de motor → indicación esperada. Repite una falla. Documenta que las señales se trasladan entre bancos por tabla de interfaces.','diagnostico','Informe con referencias, límites y resultados por criterio.']
+export const findLab = (id: string) => labs.find((l) => l.id === id)
+const matches: Record<string, string[]> = {
+  maquinas: ['variador', 'retencion', 'directo', 'inversion', 'estrella', 'diagnostico'],
+  electronica: ['ohm', 'divisor', 'rc', 'transistor', 'pwm', 'lazo'],
+  instrumentacion: ['lazo', 'lazo', 'calibracion', 'presion', 'nivel', 'sensor'],
+  redes: ['subred', 'subred', 'topologia', 'modbus', 'ciclo', 'modbus'],
+  administracion: [
+    'cronograma',
+    'cronograma',
+    'presupuesto',
+    'indicadores',
+    'cronograma',
+    'decision',
+  ],
+}
+export function recommendedLab(course: string, i: number) {
+  return (
+    findLab(matches[course]?.[i] || '') || labs.find((l) => l.course === course && l.lesson === i)
+  )
+}
+export const projectStages = [
+  [
+    'Alcance y aceptación',
+    'Define un estanque de 100 L y una bomba de llenado. Escribe condiciones observables para marcha, paro, disparo, nivel bajo y alto.',
+    'cronograma',
+    'Cronograma, supuestos y tres criterios observables.',
+  ],
+  [
+    'Circuitos y protección',
+    'Construye mando con retención, paro común, emergencia y FR. Alimenta el motor desde las tres fases. Ensaya pérdida de fase y sobrecarga.',
+    'termico',
+    'Proyecto editable, esquema y tabla de estados de KM, FR y M.',
+  ],
+  [
+    'Instrumentación y cálculo',
+    'Escala 4–20 mA a 0–100 L. Predice el tiempo de 30 a 70 L con 5 L/s de entrada y 2 L/s de salida. Contrasta con el tanque.',
+    'nivel',
+    'Tabla de cinco puntos, cálculo 40/3 s y observación del paso discreto.',
+  ],
+  [
+    'Comunicación y supervisión',
+    'Configura PLC y HMI en una /26. Define registro 0 en décimas de litro y documenta el valor de 357 cuentas. Ensaya una lectura sin enlace.',
+    'modbus',
+    'Plano de red, tabla de registros y criterios de calidad.',
+  ],
+  [
+    'Documentación y presupuesto',
+    'Dibuja mando, fuerza y disposición del tablero. Registra materiales, horas y reserva en CLP, con precios supuestos.',
+    'cad-4',
+    'Diagrama exportado, hoja CSV y presupuesto total.',
+  ],
+  [
+    'Validación e informe final',
+    'En Proyecto integrador, habilita la estación y registra un ciclo de llenado. Interrumpe el enlace HMI y luego aplica una sobrecarga. Compara nivel real, palabra leída, permiso de marcha y protección. Guarda observaciones en los resultados de esta etapa.',
+    'diagnostico',
+    'Informe con referencias, límites y resultados por criterio.',
+  ],
 ] as const
-

@@ -1,21 +1,314 @@
-import {useEffect,useState} from 'react'
-import {activities,dateKey,nextReview,passed,schedule,shiftDay,weekGoals} from '../core/plan'
-import {allCourses,courses,lessonId,lessonRoute} from '../content/catalog'
-import type {Attempt,Work} from '../core/grading'
-import {change} from '../core/storage'
-import {Head,Icon,LinkBtn,ProgressBar,Range} from './common'
-import {useRecord,useRecords} from './hooks'
-export function usePlan(){const data=useRecords(),today=dateKey(new Date()),[minutes,setMinutes]=useRecord('minutes',60),[start,setStart]=useRecord('startDate',today);useEffect(()=>{if(!data.startDate)void setStart(today)},[data.startDate,today]);return {data,today,minutes,setMinutes,start,setStart,days:schedule(data,minutes,start,today)}}
-export function Reviews(){const data=useRecords(),today=dateKey(new Date()),[reveal,R]=useState<string|null>(null)
- const items=allCourses.flatMap(c=>c.lessons.map((l,i)=>({c,l,i,id:lessonId(c.id,i),r:data['review:'+lessonId(c.id,i)] as {stage:number;due:string}|undefined}))).filter(v=>v.r&&v.r.due<=today)
- return <section className="panel"><h2>Recuperación activa</h2>{!items.length?<p>Sin repasos vencidos. Al corregir una evaluación se programa el siguiente repaso de cada clase.</p>:items.map(({c,l,i,id,r})=><div className="review" key={id}><small>{c.short} · programado para {r!.due}</small><h3>{l.title}</h3><p>{l.review}</p>{reveal===id?<><p>{l.example.join(' ')}</p><a href={lessonRoute(c.id,i)}>Volver a la explicación →</a><div className="inline">{[false,true].map(ok=><button key={String(ok)} onClick={()=>{void change('review:'+id,r!,nextReview(today,r!.stage,ok));R(null)}}>{ok?'Lo recordé':'Necesito practicar'}</button>)}</div></>:<button onClick={()=>R(id)}>Comparar con el ejemplo</button>}</div>)}</section>
+import { useEffect, useState } from 'react'
+import {
+  routeActivities,
+  type Track,
+  dateKey,
+  nextReview,
+  passed,
+  schedule,
+  shiftDay,
+  weekGoals,
+} from '../core/plan'
+import { allCourses, courses, lessonId, lessonRoute } from '../content/catalog'
+import type { Attempt, Work } from '../core/grading'
+import { change } from '../core/storage'
+import { Head, Icon, LinkBtn, ProgressBar, Range } from './common'
+import { useRecord, useRecords } from './hooks'
+export function usePlan() {
+  const [track, setTrack] = useRecord<Track>('planTrack', 'auto'),
+    data = useRecords(),
+    today = dateKey(new Date()),
+    [minutes, setMinutes] = useRecord('minutes', 60),
+    [start, setStart] = useRecord('startDate', today)
+  useEffect(() => {
+    if (!data.startDate) void setStart(today)
+  }, [data.startDate, today])
+  return {
+    data,
+    today,
+    minutes,
+    setMinutes,
+    start,
+    setStart,
+    track,
+    setTrack,
+    days: schedule(data, minutes, start, today, track),
+  }
 }
-export function Planner(){const {today,data,minutes,setMinutes,start,setStart,days}=usePlan(),[week,W]=useState(()=>Math.min(7,Math.max(0,Math.floor((Date.parse(today)-Date.parse(start))/604800000))))
- const beginning=shiftDay(start,week*7),end=shiftDay(beginning,6),inWeek=days.filter(d=>d.date>=beginning&&d.date<=end),overflow=days.filter(d=>d.date>shiftDay(start,55))
- function renderDay(day:typeof days[number]){return <details className="panel day" key={day.date} open={day.date===today||undefined}><summary>{new Date(day.date+'T12:00:00').toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long'})} <small>{day.entries.reduce((a,e)=>a+e.mins,0)} min</small></summary>{day.entries.map(({a,mins,offset})=><div key={a.id+offset} className="session"><a href={a.link}><b>{a.title}</b><small>{a.kind} · tramo {offset+1}–{offset+mins} de {a.minutes} min</small></a>{offset+mins<a.minutes&&<button onClick={()=>void change('plan:'+a.id,0,offset+mins)}>Registrar tramo</button>}</div>)}</details>}
- return <><Head title="Plan de ocho semanas" desc="Distribuye tus sesiones según el tiempo disponible. El trabajo pendiente vuelve a programarse desde hoy."/><div className="panel fields"><label>Fecha de inicio<input type="date" value={start} onChange={e=>{if(e.target.value)void setStart(e.target.value)}}/></label><Range label="Tiempo diario" value={minutes} on={n=>void setMinutes(n)} min={30} max={120} step={5} unit="min"/></div><Reviews/><div className="weeks" aria-label="Elegir semana">{weekGoals.map((_,i)=><button key={i} aria-pressed={week===i} onClick={()=>W(i)}>S{i+1}</button>)}</div><div className="panel"><small>Semana {week+1} · {beginning} / {end}</small><h2>{weekGoals[week]}</h2><p>{activities.filter(a=>a.week===week+1).length} actividades previstas en la ruta original. La agenda diaria refleja el trabajo pendiente y el tiempo que elegiste.</p></div>{inWeek.length?inWeek.map(renderDay):<p>Sin sesiones pendientes en estas fechas. Revisa la siguiente semana o los repasos activos.</p>}
- {overflow.length>0&&<details className="panel"><summary>Continuación después de la semana 8 · {overflow.length} días</summary><p>Con tu tiempo actual, la última sesión cae el {overflow.at(-1)!.date}. Las actividades conservan su orden y sus evidencias.</p>{overflow.map(renderDay)}</details>}
- {((data.legacy as {weeks:number[]})?.weeks.length||0)>0&&<p>Semanas marcadas en la versión anterior: {(data.legacy as {weeks:number[]}).weeks.join(', ')}.</p>}</>
+export function Reviews() {
+  const data = useRecords(),
+    today = dateKey(new Date()),
+    [reveal, R] = useState<string | null>(null)
+  const items = allCourses
+    .flatMap((c) =>
+      c.lessons.map((l, i) => ({
+        c,
+        l,
+        i,
+        id: lessonId(c.id, i),
+        r: data['review:' + lessonId(c.id, i)] as { stage: number; due: string } | undefined,
+      })),
+    )
+    .filter((v) => v.r && v.r.due <= today)
+  return (
+    <section className="panel">
+      <h2>Recuperación activa</h2>
+      {!items.length ? (
+        <p>
+          Sin repasos vencidos. Al corregir una evaluación se programa el siguiente repaso de cada
+          clase.
+        </p>
+      ) : (
+        items.map(({ c, l, i, id, r }) => (
+          <div className="review" key={id}>
+            <small>
+              {c.short} · programado para {r!.due}
+            </small>
+            <h3>{l.title}</h3>
+            <p>{l.review}</p>
+            {reveal === id ? (
+              <>
+                <p>{l.example.join(' ')}</p>
+                <a href={lessonRoute(c.id, i)}>Volver a la explicación →</a>
+                <div className="inline">
+                  {[false, true].map((ok) => (
+                    <button
+                      key={String(ok)}
+                      onClick={() => {
+                        void change('review:' + id, r!, nextReview(today, r!.stage, ok))
+                        R(null)
+                      }}
+                    >
+                      {ok ? 'Lo recordé' : 'Necesito practicar'}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <button onClick={() => R(id)}>Comparar con el ejemplo</button>
+            )}
+          </div>
+        ))
+      )}
+    </section>
+  )
 }
-export function Progress(){const data=useRecords();const attempts=Object.entries(data).filter(([k])=>k.startsWith('attempt:')).flatMap(([,v])=>v as Attempt[]),errors=attempts.flatMap(a=>a.items.filter(q=>!q.ok).map(q=>({...q,date:a.date}))).sort((a,b)=>b.date.localeCompare(a.date));return <><Head title="Mi progreso" desc="Las clases se acreditan al resolver sus dos preguntas. Las prácticas llevan una autoevaluación con evidencias."/><div className="stat-grid">{[['Clases acreditadas',courses.reduce((s,c)=>s+c.lessons.filter((_,i)=>passed(data,lessonId(c.id,i))).length,0)+' / 36'],['Intentos guardados',attempts.length],['Trabajos autoevaluados',Object.entries(data).filter(([k,v])=>k.startsWith('work:')&&(v as Work).state==='Autoevaluado').length]].map(([k,v])=><div className="panel" key={k}><small>{k}</small><strong className="stat">{v}</strong></div>)}</div><section className="panel"><h2>Por asignatura</h2>{allCourses.map(c=>{const n=c.lessons.filter((_,i)=>passed(data,lessonId(c.id,i))).length;return <div className="progress-line" key={c.id}><Icon name={c.id}/><a href={'#/curso/'+c.id}>{c.short}</a><ProgressBar value={n} total={c.lessons.length} label={c.short}/><span>{n}/{c.lessons.length}</span></div>})}</section><Reviews/><section className="panel"><h2>Registro de errores</h2>{errors.length?errors.map((e,i)=>{const c=allCourses.find(c=>e.lesson.startsWith(c.id+'-'));return <details key={i}><summary>{e.prompt}</summary><p>{new Date(e.date).toLocaleDateString('es-CL')} · Tu respuesta: {e.value}</p><p>{e.explanation}</p>{c&&<a href={lessonRoute(c.id,Number(e.lesson.split('-').at(-1))-1)}>Repasar clase →</a>}</details>}):<p>Los errores aparecerán con la respuesta que diste, el procedimiento y la clase de repaso.</p>}</section><section className="panel"><h2>Historial anterior</h2><p>Preguntas introductorias acertadas en la edición anterior: {Object.keys((data.legacy as {diagnostic?:object})?.diagnostic||{}).length}/6. Las clases nuevas tienen sus propias comprobaciones.</p><LinkBtn href="#/respaldo" sub>Administrar respaldo</LinkBtn></section></>}
-
+export function Planner() {
+  const { today, data, minutes, setMinutes, start, setStart, days, track, setTrack } = usePlan(),
+    [week, W] = useState(() =>
+      Math.min(7, Math.max(0, Math.floor((Date.parse(today) - Date.parse(start)) / 604800000))),
+    )
+  const beginning = shiftDay(start, week * 7),
+    end = shiftDay(beginning, 6),
+    inWeek = days.filter((d) => d.date >= beginning && d.date <= end),
+    overflow = days.filter((d) => d.date > shiftDay(start, 55))
+  function renderDay(day: (typeof days)[number]) {
+    return (
+      <details className="panel day" key={day.date} open={day.date === today || undefined}>
+        <summary>
+          {new Date(day.date + 'T12:00:00').toLocaleDateString('es-CL', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+          })}{' '}
+          <small>{day.entries.reduce((a, e) => a + e.mins, 0)} min</small>
+        </summary>
+        {day.entries.map(({ a, mins, offset }) => (
+          <div key={a.id + offset} className="session">
+            <a href={a.link}>
+              <b>{a.title}</b>
+              <small>
+                {a.kind} · tramo {offset + 1}–{offset + mins} de {a.minutes} min
+              </small>
+            </a>
+            {offset + mins < a.minutes && (
+              <button onClick={() => void change('plan:' + a.id, 0, offset + mins)}>
+                Registrar tramo
+              </button>
+            )}
+          </div>
+        ))}
+      </details>
+    )
+  }
+  return (
+    <>
+      <Head
+        title="Plan de ocho semanas"
+        desc="Distribuye tus sesiones según el tiempo disponible. El trabajo pendiente vuelve a programarse desde hoy."
+      />
+      <div className="panel fields">
+        <label>
+          Fecha de inicio
+          <input
+            type="date"
+            value={start}
+            onChange={(e) => {
+              if (e.target.value) void setStart(e.target.value)
+            }}
+          />
+        </label>
+        <label>
+          Ruta de estudio
+          <select value={track} onChange={(e) => void setTrack(e.target.value as Track)}>
+            <option value="auto">Según el tiempo diario</option>
+            <option value="core">Esencial de ocho semanas</option>
+            <option value="full">Todas las prácticas</option>
+          </select>
+        </label>
+        <Range
+          label="Tiempo diario"
+          value={minutes}
+          on={(n) => void setMinutes(n)}
+          min={30}
+          max={120}
+          step={5}
+          unit="min"
+        />
+      </div>
+      <p className="note">
+        {track === 'core' || (track === 'auto' && minutes < 45)
+          ? 'La ruta esencial incluye las 36 clases troncales, las evaluaciones, 20 prácticas y el proyecto. Las demás prácticas están disponibles en el catálogo.'
+          : 'La ruta completa incluye todos los laboratorios del catálogo.'}{' '}
+        Los repasos vencidos tienen prioridad en el tiempo de hoy.
+      </p>
+      <Reviews />
+      <div className="weeks" role="group" aria-label="Elegir semana">
+        {weekGoals.map((_, i) => (
+          <button key={i} aria-pressed={week === i} onClick={() => W(i)}>
+            S{i + 1}
+          </button>
+        ))}
+      </div>
+      <div className="panel">
+        <small>
+          Semana {week + 1} · {beginning} / {end}
+        </small>
+        <h2>{weekGoals[week]}</h2>
+        <p>
+          {routeActivities(minutes, track).filter((a) => a.week === week + 1).length} actividades
+          previstas en la ruta original. La agenda diaria refleja el trabajo pendiente y el tiempo
+          que elegiste.
+        </p>
+      </div>
+      {inWeek.length ? (
+        inWeek.map(renderDay)
+      ) : (
+        <p>
+          Sin sesiones pendientes en estas fechas. Revisa la siguiente semana o los repasos activos.
+        </p>
+      )}
+      {overflow.length > 0 && (
+        <details className="panel">
+          <summary>Continuación después de la semana 8 · {overflow.length} días</summary>
+          <p>
+            Con tu tiempo actual, la última sesión cae el {overflow.at(-1)!.date}. Las actividades
+            conservan su orden y sus evidencias.
+          </p>
+          {overflow.map(renderDay)}
+        </details>
+      )}
+      {((data.legacy as { weeks: number[] })?.weeks.length || 0) > 0 && (
+        <p>
+          Semanas marcadas en la versión anterior:{' '}
+          {(data.legacy as { weeks: number[] }).weeks.join(', ')}.
+        </p>
+      )}
+    </>
+  )
+}
+export function Progress() {
+  const data = useRecords()
+  const attempts = Object.entries(data)
+      .filter(([k]) => k.startsWith('attempt:'))
+      .flatMap(([, v]) => v as Attempt[]),
+    errors = attempts
+      .flatMap((a) => a.items.filter((q) => !q.ok).map((q) => ({ ...q, date: a.date })))
+      .sort((a, b) => b.date.localeCompare(a.date))
+  return (
+    <>
+      <Head
+        title="Mi progreso"
+        desc="Las clases se acreditan al resolver sus dos preguntas. Las prácticas llevan una autoevaluación con evidencias."
+      />
+      <div className="stat-grid">
+        {[
+          [
+            'Clases acreditadas',
+            courses.reduce(
+              (s, c) => s + c.lessons.filter((_, i) => passed(data, lessonId(c.id, i))).length,
+              0,
+            ) + ' / 36',
+          ],
+          ['Intentos guardados', attempts.length],
+          [
+            'Trabajos autoevaluados',
+            Object.entries(data).filter(
+              ([k, v]) => k.startsWith('work:') && (v as Work).state === 'Autoevaluado',
+            ).length,
+          ],
+        ].map(([k, v]) => (
+          <div className="panel" key={k}>
+            <small>{k}</small>
+            <strong className="stat">{v}</strong>
+          </div>
+        ))}
+      </div>
+      <section className="panel">
+        <h2>Por asignatura</h2>
+        {allCourses.map((c) => {
+          const n = c.lessons.filter((_, i) => passed(data, lessonId(c.id, i))).length
+          return (
+            <div className="progress-line" key={c.id}>
+              <Icon name={c.id} />
+              <a href={'#/curso/' + c.id}>{c.short}</a>
+              <ProgressBar value={n} total={c.lessons.length} label={c.short} />
+              <span>
+                {n}/{c.lessons.length}
+              </span>
+            </div>
+          )
+        })}
+      </section>
+      <Reviews />
+      <section className="panel">
+        <h2>Registro de errores</h2>
+        {errors.length ? (
+          errors.map((e, i) => {
+            const c = allCourses.find((c) => e.lesson.startsWith(c.id + '-'))
+            return (
+              <details key={i}>
+                <summary>{e.prompt}</summary>
+                <p>
+                  {new Date(e.date).toLocaleDateString('es-CL')} · Tu respuesta: {e.value}
+                </p>
+                <p>{e.explanation}</p>
+                {c && (
+                  <a href={lessonRoute(c.id, Number(e.lesson.split('-').at(-1)) - 1)}>
+                    Repasar clase →
+                  </a>
+                )}
+              </details>
+            )
+          })
+        ) : (
+          <p>
+            Los errores aparecerán con la respuesta que diste, el procedimiento y la clase de
+            repaso.
+          </p>
+        )}
+      </section>
+      <section className="panel">
+        <h2>Historial anterior</h2>
+        <p>
+          Preguntas introductorias acertadas en la edición anterior:{' '}
+          {Object.keys((data.legacy as { diagnostic?: object })?.diagnostic || {}).length}/6. Las
+          clases nuevas tienen sus propias comprobaciones.
+        </p>
+        <LinkBtn href="#/respaldo" sub>
+          Administrar respaldo
+        </LinkBtn>
+      </section>
+    </>
+  )
+}

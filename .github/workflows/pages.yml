@@ -1,16 +1,21 @@
 name: Academia · verificar y publicar
 on:
   push:
-    branches: [main]
+    branches: [main, academia-2026]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: academia-pages
+  group: academia-verificar-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   validate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    outputs:
+      mode: ${{ steps.mode.outputs.mode }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,12 +25,20 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - run: node tools/pages.mjs --check
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - name: Consultar la fuente de Pages
+        id: mode
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: echo "mode=$(gh api repos/${GITHUB_REPOSITORY}/pages --jq .build_type)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@v3
+        if: steps.mode.outputs.mode == 'workflow' && github.ref == 'refs/heads/main'
         with:
           path: dist
   publish:
+    if: needs.validate.outputs.mode == 'workflow' && github.ref == 'refs/heads/main'
     needs: validate
     runs-on: ubuntu-latest
     permissions:

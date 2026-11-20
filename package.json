@@ -8,8 +8,9 @@
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build && node tools/offline.mjs",
     "preview": "vite preview",
-    "test": "node --import tsx --test tests/*.test.ts",
+    "test": "node --import tsx --test --test-isolation=none tests/*.test.ts",
     "test:e2e": "playwright test",
+    "pages:prepare": "npm run build && node tools/pages.mjs",
     "check:links": "node --import tsx tools/links.mjs"
   },
   "dependencies": {
